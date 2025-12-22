@@ -1205,6 +1205,11 @@ func (sc *SettingController) syncUpgradeChecker() error {
 		return nil
 	}
 
+	// Update timestamp IMMEDIATELY.
+	// This ensures that even if we crash or get throttled, we won't try
+	// again for another hour.
+	sc.lastUpgradeCheckedTimestamp = now
+
 	currentLatestVersion := latestLonghornVersion.Value
 	currentStableVersions := stableLonghornVersions.Value
 	latestLonghornVersion.Value, stableLonghornVersions.Value, err = sc.CheckLatestAndStableLonghornVersions()
@@ -1213,8 +1218,6 @@ func (sc *SettingController) syncUpgradeChecker() error {
 		sc.logger.WithError(err).Warn("Failed to check for the latest and stable Longhorn versions")
 		return nil
 	}
-
-	sc.lastUpgradeCheckedTimestamp = now
 
 	if latestLonghornVersion.Value != currentLatestVersion {
 		sc.logger.Infof("Latest Longhorn version is %v", latestLonghornVersion.Value)
